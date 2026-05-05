@@ -5,7 +5,6 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using Il2CppInterop.Runtime;
-using Il2CppInterop.Runtime.InteropTypes.Arrays;
 
 namespace VotekickMod
 {
@@ -13,8 +12,6 @@ namespace VotekickMod
     public class VotekickPlugin : BasePlugin
     {
         public static ManualLogSource Logger;
-        public static List<int> votekickedPlayerIds = new List<int>();
-        public static int selectedVotekickTargetId = -1;
         public static bool showGui = false;
 
         public override void Load()
@@ -45,80 +42,61 @@ namespace VotekickMod
 
                 if (GUI.Button(new Rect(20, 40, 230, 30), "Votekick All"))
                 {
-                    VotekickAll();
+                    VotekickAllOnce();
                 }
 
                 int yOffset = 80;
-                var allPlayers = PlayerControl.AllPlayerControls;
+                var players = PlayerControl.AllPlayerControls;
                 
-                if (allPlayers != null)
+                if (players != null)
                 {
-                    for (int i = 0; i < allPlayers.Count; i++)
+                    for (int i = 0; i < players.Count; i++)
                     {
-                        var player = allPlayers[i];
-                        if (player == null || player.AmOwner || player.Data == null) continue;
+                        var p = players[i];
+                        if (p == null || p.AmOwner || p.Data == null) continue;
 
-                        if (GUI.Button(new Rect(20, yOffset, 230, 25), player.Data.PlayerName))
+                        if (GUI.Button(new Rect(20, yOffset, 230, 25), "Kick " + p.Data.PlayerName))
                         {
-                            selectedVotekickTargetId = player.Data.ClientId;
-                            VotekickTarget();
+                            SendKick(p.Data.ClientId);
                         }
                         yOffset += 30;
                     }
                 }
             }
 
-            private void VotekickAll()
+            private void VotekickAllOnce()
             {
-                try
+                if (VoteBanSystem.Instance == null) return;
+
+                var players = PlayerControl.AllPlayerControls;
+                int count = 0;
+
+                for (int i = 0; i < players.Count; i++)
                 {
-                    if (VoteBanSystem.Instance != null)
+                    var p = players[i];
+                    if (p != null && !p.AmOwner && p.Data != null)
                     {
-                        int num = 0;
-                        var playerArray = PlayerControl.AllPlayerControls.ToArray();
-                        foreach (var playerControl in playerArray)
-                        {
-                            if (playerControl != null && !playerControl.AmOwner)
-                            {
-                                int clientId = playerControl.Data.ClientId;
-                                if (!votekickedPlayerIds.Contains(clientId))
-                                {
-                                    for (int i = 0; i < 3; i++)
-                                    {
-                                        VoteBanSystem.Instance.CmdAddVote(clientId);
-                                    }
-                                    votekickedPlayerIds.Add(clientId);
-                                    num++;
-                                }
-                            }
-                        }
-                        VotekickPlugin.Logger.LogInfo("Votekick sent to " + num.ToString() + " players");
+                        SendKick(p.Data.ClientId);
+                        count++;
                     }
                 }
-                catch (Exception ex)
-                {
-                    VotekickPlugin.Logger.LogError("Failed to votekick all: " + ex.Message);
-                }
+                VotekickPlugin.Logger.LogInfo("Executed kick on " + count + " players.");
             }
 
-            private void VotekickTarget()
+            private void SendKick(int clientId)
             {
-                try
+                if (VoteBanSystem.Instance == null) return;
+
+                // Sends exactly 3 votes to the target to hit the threshold
+                VoteBanSystem.Instance.CmdAddVote(clientId);
+                VoteBanSystem.Instance.CmdAddVote(clientId);
+                VoteBanSystem.Instance.CmdAddVote(clientId);
+
+                VotekickPlugin.Logger.LogInfo("Kick sent to: " + clientId);
+                
+                if (DestroyableSingleton<HudManager>.Instance?.Notifier != null)
                 {
-                    if (selectedVotekickTargetId != -1 && VoteBanSystem.Instance != null)
-                    {
-                        VoteBanSystem.Instance.CmdAddVote(selectedVotekickTargetId);
-                        VotekickPlugin.Logger.LogInfo("Votekick added to player with ClientId: " + selectedVotekickTargetId.ToString());
-                        
-                        if (DestroyableSingleton<HudManager>.Instance != null && DestroyableSingleton<HudManager>.Instance.Notifier != null)
-                        {
-                            DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Votekick sent! Repeat 2 more times.");
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    VotekickPlugin.Logger.LogError("Failed to votekick target: " + ex.Message);
+                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Kicking ID: " + clientId);
                 }
             }
         }
