@@ -1,0 +1,32 @@
+name: Build Votekick Mod
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.x
+
+    - name: Restore Dependencies
+      run: dotnet restore
+
+    - name: Build Mod
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: VotekickMod-DLL
+        path: bin/Release/netstandard2.1/VotekickMod.dll
