@@ -87,7 +87,7 @@ namespace VotekickMod
             {
                 if (VoteBanSystem.Instance == null) return;
 
-                // Sends exactly 3 votes to the target to hit the threshold
+               
                 VoteBanSystem.Instance.CmdAddVote(clientId);
                 VoteBanSystem.Instance.CmdAddVote(clientId);
                 VoteBanSystem.Instance.CmdAddVote(clientId);
