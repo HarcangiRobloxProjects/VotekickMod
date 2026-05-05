@@ -1,10 +1,11 @@
 using BepInEx;
-using BepInEx.IL2CPP;
+using BepInEx.Unity.IL2CPP;
 using BepInEx.Logging;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
-using UnhollowerBaseLib;
+using Il2CppInterop.Runtime;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 
 namespace VotekickMod
 {
@@ -31,16 +32,8 @@ namespace VotekickMod
                 if (Input.GetKeyDown(KeyCode.F2))
                 {
                     showGui = !showGui;
-                    if (showGui)
-                    {
-                        Cursor.visible = true;
-                        Cursor.lockState = CursorLockMode.None;
-                    }
-                    else
-                    {
-                        Cursor.visible = false;
-                        Cursor.lockState = CursorLockMode.Locked;
-                    }
+                    Cursor.visible = showGui;
+                    Cursor.lockState = showGui ? CursorLockMode.None : CursorLockMode.Locked;
                 }
             }
 
@@ -56,10 +49,13 @@ namespace VotekickMod
                 }
 
                 int yOffset = 80;
-                if (PlayerControl.AllPlayerControls != null)
+                var allPlayers = PlayerControl.AllPlayerControls;
+                
+                if (allPlayers != null)
                 {
-                    foreach (var player in PlayerControl.AllPlayerControls)
+                    for (int i = 0; i < allPlayers.Count; i++)
                     {
+                        var player = allPlayers[i];
                         if (player == null || player.AmOwner || player.Data == null) continue;
 
                         if (GUI.Button(new Rect(20, yOffset, 230, 25), player.Data.PlayerName))
@@ -79,7 +75,8 @@ namespace VotekickMod
                     if (VoteBanSystem.Instance != null)
                     {
                         int num = 0;
-                        foreach (PlayerControl playerControl in PlayerControl.AllPlayerControls.ToArray())
+                        var playerArray = PlayerControl.AllPlayerControls.ToArray();
+                        foreach (var playerControl in playerArray)
                         {
                             if (playerControl != null && !playerControl.AmOwner)
                             {
@@ -115,7 +112,7 @@ namespace VotekickMod
                         
                         if (DestroyableSingleton<HudManager>.Instance != null && DestroyableSingleton<HudManager>.Instance.Notifier != null)
                         {
-                            DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Votekick sent! Leave and rejoin 2 more times.");
+                            DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Votekick sent! Repeat 2 more times.");
                         }
                     }
                 }
