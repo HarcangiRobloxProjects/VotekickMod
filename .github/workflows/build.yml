@@ -3,8 +3,6 @@ name: Build Votekick Mod
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
   build:
@@ -12,10 +10,10 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 6.x
 
@@ -25,8 +23,10 @@ jobs:
     - name: Build Mod
       run: dotnet build --configuration Release --no-restore
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+    - name: Upload DLL
+      uses: actions/upload-artifact@v4
       with:
-        name: VotekickMod-DLL
+        name: VotekickMod
         path: bin/Release/netstandard2.1/VotekickMod.dll
+        if-no-files-found: error
+        retention-days: 1
