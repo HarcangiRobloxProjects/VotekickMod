@@ -43,7 +43,7 @@ namespace VotekickMod
                 if (GUI.Button(new Rect(20, 40, 230, 30), "Votekick All"))
                 {
                     VotekickAllOnce();
-                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Votekicked all");
+                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Votekicked Everyone");
                 }
 
                 int yOffset = 80;
@@ -157,7 +157,7 @@ namespace VotekickMod
             {
                 if (ImmortalityLogic.Enabled && target == PlayerControl.LocalPlayer)
                 {
-                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage(__instance.Data.PlayerName + " Attempted to kill you");
+                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage(__instance.Data.PlayerName + " Attempted to kill you but failed :D");
                 }
             }
         }
