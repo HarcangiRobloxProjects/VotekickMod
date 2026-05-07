@@ -89,7 +89,7 @@ namespace VotekickMod
             public ImmortalityLogic(IntPtr ptr) : base(ptr) { }
 
             private static readonly int CUSTOM_VENT_ID = 50;
-            private static bool _enabled = false;
+            public static bool _enabled = false;
             private float _checkTimer = 0f;
 
             public static bool Enabled
@@ -110,16 +110,12 @@ namespace VotekickMod
             private void Update()
             {
                 _checkTimer += Time.deltaTime;
-                if (_checkTimer < 1.0f) return;
+                if (_checkTimer < 2.0f) return;
                 _checkTimer = 0f;
 
                 if (PlayerControl.LocalPlayer?.Data != null && !PlayerControl.LocalPlayer.Data.IsDead)
                 {
-                    if (!Enabled) 
-                    {
-                        Enabled = true;
-                        VentilationSystem.Update(VentilationSystem.Operation.Enter, CUSTOM_VENT_ID);
-                    }
+                    if (!Enabled) Enabled = true;
                 }
                 else
                 {
@@ -144,9 +140,9 @@ namespace VotekickMod
         [HarmonyPatch(typeof(ShipStatus), nameof(ShipStatus.Awake))]
         class OnShipStatusCreate
         {
-            static void Postfix()
+            static void Prefix()
             {
-                ImmortalityLogic.Enabled = false; 
+                ImmortalityLogic._enabled = false;
             }
         }
 
@@ -167,10 +163,8 @@ namespace VotekickMod
         {
             static void Postfix()
             {
-                if (PlayerControl.LocalPlayer != null && !PlayerControl.LocalPlayer.Data.IsDead)
-                {
-                    ImmortalityLogic.Enabled = false; 
-                }
+                if (!ImmortalityLogic.Enabled || PlayerControl.LocalPlayer.Data.IsDead) return;
+                VentilationSystem.Update(VentilationSystem.Operation.Enter, 50);
             }
         }
     }
