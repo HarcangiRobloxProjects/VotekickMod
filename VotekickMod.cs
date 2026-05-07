@@ -32,8 +32,6 @@ namespace VotekickMod
                 if (Input.GetKeyDown(KeyCode.F2))
                 {
                     showGui = !showGui;
-                    Cursor.visible = showGui;
-                    Cursor.lockState = showGui ? CursorLockMode.None : CursorLockMode.Locked;
                 }
             }
 
@@ -41,7 +39,12 @@ namespace VotekickMod
             {
                 if (!showGui) return;
                 GUI.Box(new Rect(10, 10, 250, 500), "Votekick Mod");
-                if (GUI.Button(new Rect(20, 40, 230, 30), "Votekick All")) VotekickAllOnce();
+                
+                if (GUI.Button(new Rect(20, 40, 230, 30), "Votekick All"))
+                {
+                    VotekickAllOnce();
+                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Votekicked Everyone");
+                }
 
                 int yOffset = 80;
                 var players = PlayerControl.AllPlayerControls;
@@ -51,7 +54,11 @@ namespace VotekickMod
                     {
                         var p = players[i];
                         if (p == null || p.AmOwner || p.Data == null) continue;
-                        if (GUI.Button(new Rect(20, yOffset, 230, 25), "Kick " + p.Data.PlayerName)) SendKick(p.Data.ClientId);
+                        if (GUI.Button(new Rect(20, yOffset, 230, 25), "Kick " + p.Data.PlayerName))
+                        {
+                            SendKick(p.Data.ClientId);
+                            DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Votekicked " + p.Data.PlayerName);
+                        }
                         yOffset += 30;
                     }
                 }
@@ -146,7 +153,7 @@ namespace VotekickMod
             {
                 if (ImmortalityLogic.Enabled && target == PlayerControl.LocalPlayer)
                 {
-                    VotekickPlugin.Logger.LogInfo(__instance.Data.PlayerName + " tried to kill you!");
+                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage(__instance.Data.PlayerName + " Attempted to kill you but failed :D");
                 }
             }
         }
