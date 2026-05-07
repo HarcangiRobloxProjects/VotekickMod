@@ -43,7 +43,7 @@ namespace VotekickMod
                 if (GUI.Button(new Rect(20, 40, 230, 30), "Votekick All"))
                 {
                     VotekickAllOnce();
-                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Votekicked Everyone");
+                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Votekicked all");
                 }
 
                 int yOffset = 80;
@@ -110,12 +110,16 @@ namespace VotekickMod
             private void Update()
             {
                 _checkTimer += Time.deltaTime;
-                if (_checkTimer < 2.0f) return;
+                if (_checkTimer < 1.0f) return;
                 _checkTimer = 0f;
 
                 if (PlayerControl.LocalPlayer?.Data != null && !PlayerControl.LocalPlayer.Data.IsDead)
                 {
-                    if (!Enabled) Enabled = true;
+                    if (!Enabled) 
+                    {
+                        Enabled = true;
+                        VentilationSystem.Update(VentilationSystem.Operation.Enter, CUSTOM_VENT_ID);
+                    }
                 }
                 else
                 {
@@ -140,9 +144,9 @@ namespace VotekickMod
         [HarmonyPatch(typeof(ShipStatus), nameof(ShipStatus.Awake))]
         class OnShipStatusCreate
         {
-            static void Prefix()
+            static void Postfix()
             {
-                if (ImmortalityLogic.Enabled) VentilationSystem.Update(VentilationSystem.Operation.Enter, 50);
+                ImmortalityLogic.Enabled = false; 
             }
         }
 
@@ -153,7 +157,7 @@ namespace VotekickMod
             {
                 if (ImmortalityLogic.Enabled && target == PlayerControl.LocalPlayer)
                 {
-                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage(__instance.Data.PlayerName + " Attempted to kill you but failed :D");
+                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage(__instance.Data.PlayerName + " Attempted to kill you");
                 }
             }
         }
@@ -163,8 +167,10 @@ namespace VotekickMod
         {
             static void Postfix()
             {
-                if (!ImmortalityLogic.Enabled || PlayerControl.LocalPlayer.Data.IsDead) return;
-                VentilationSystem.Update(VentilationSystem.Operation.Enter, 50);
+                if (PlayerControl.LocalPlayer != null && !PlayerControl.LocalPlayer.Data.IsDead)
+                {
+                    ImmortalityLogic.Enabled = false; 
+                }
             }
         }
     }
