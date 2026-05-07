@@ -4,141 +4,161 @@ using BepInEx.Logging;
 using UnityEngine;
 using HarmonyLib;
 using System;
-using Il2CppInterop.Runtime;
 using InnerNet;
 
 namespace VotekickMod
 {
-[BepInPlugin("com.votekick.mod", "Votekick Mod", "1.1.0")]
-public class VotekickPlugin : BasePlugin
-{
-public static ManualLogSource Logger;
-public static bool showGui = false;
-
-    public override void Load()
+    [BepInPlugin("com.votekick.mod", "Votekick Mod", "1.0.0")]
+    public class VotekickPlugin : BasePlugin
     {
-        Logger = Log;
-        var harmony = new Harmony("com.votekick.mod");
-        harmony.PatchAll();
+        public static ManualLogSource Logger;
+        public static bool showGui = false;
 
-        AddComponent<VotekickMenu>();
-        AddComponent<ImmortalityHandler>();
-    }
-
-    public class VotekickMenu : MonoBehaviour
-    {
-        public VotekickMenu(IntPtr ptr) : base(ptr) { }
-
-        private void Update()
+        public override void Load()
         {
-            if (Input.GetKeyDown(KeyCode.F2))
-            {
-                showGui = !showGui;
-                Cursor.visible = showGui;
-                Cursor.lockState = showGui ? CursorLockMode.None : CursorLockMode.Locked;
-            }
+            Logger = Log;
+            var harmony = new Harmony("com.votekick.mod");
+            harmony.PatchAll();
+            AddComponent<VotekickMenu>();
+            AddComponent<ImmortalityLogic>();
         }
 
-        private void OnGUI()
+        public class VotekickMenu : MonoBehaviour
         {
-            if (!showGui) return;
+            public VotekickMenu(IntPtr ptr) : base(ptr) { }
 
-            GUI.Box(new Rect(10, 10, 250, 500), "Mod Menu");
-
-            if (GUI.Button(new Rect(20, 40, 230, 30), "Votekick All"))
+            private void Update()
             {
-                VotekickAll();
+                if (Input.GetKeyDown(KeyCode.F2))
+                {
+                    showGui = !showGui;
+                    Cursor.visible = showGui;
+                    Cursor.lockState = showGui ? CursorLockMode.None : CursorLockMode.Locked;
+                }
             }
 
-            int yOffset = 80;
-            var players = PlayerControl.AllPlayerControls;
-            if (players != null)
+            private void OnGUI()
             {
+                if (!showGui) return;
+                GUI.Box(new Rect(10, 10, 250, 500), "Votekick Mod");
+                if (GUI.Button(new Rect(20, 40, 230, 30), "Votekick All")) VotekickAllOnce();
+
+                int yOffset = 80;
+                var players = PlayerControl.AllPlayerControls;
+                if (players != null)
+                {
+                    for (int i = 0; i < players.Count; i++)
+                    {
+                        var p = players[i];
+                        if (p == null || p.AmOwner || p.Data == null) continue;
+                        if (GUI.Button(new Rect(20, yOffset, 230, 25), "Kick " + p.Data.PlayerName)) SendKick(p.Data.ClientId);
+                        yOffset += 30;
+                    }
+                }
+            }
+
+            private void VotekickAllOnce()
+            {
+                if (VoteBanSystem.Instance == null) return;
+                var players = PlayerControl.AllPlayerControls;
                 for (int i = 0; i < players.Count; i++)
                 {
                     var p = players[i];
-                    if (p == null || p.AmOwner || p.Data == null) continue;
+                    if (p != null && !p.AmOwner && p.Data != null) SendKick(p.Data.ClientId);
+                }
+            }
 
-                    if (GUI.Button(new Rect(20, yOffset, 230, 25), "Kick " + p.Data.PlayerName))
+            private void SendKick(int clientId)
+            {
+                if (VoteBanSystem.Instance == null) return;
+                VoteBanSystem.Instance.CmdAddVote(clientId);
+                VoteBanSystem.Instance.CmdAddVote(clientId);
+                VoteBanSystem.Instance.CmdAddVote(clientId);
+            }
+        }
+
+        public class ImmortalityLogic : MonoBehaviour
+        {
+            public ImmortalityLogic(IntPtr ptr) : base(ptr) { }
+
+            private static readonly int CUSTOM_VENT_ID = 50;
+            private static bool _enabled = false;
+            private float _checkTimer = 0f;
+
+            public static bool Enabled
+            {
+                get => _enabled;
+                set
+                {
+                    if (value == _enabled) return;
+                    if (PlayerControl.LocalPlayer != null && !PlayerControl.LocalPlayer.inVent)
                     {
-                        SendKick(p.Data.ClientId);
+                        if (value) VentilationSystem.Update(VentilationSystem.Operation.Enter, CUSTOM_VENT_ID);
+                        else VentilationSystem.Update(VentilationSystem.Operation.Exit, CUSTOM_VENT_ID);
                     }
-                    yOffset += 30;
+                    _enabled = value;
+                }
+            }
+
+            private void Update()
+            {
+                _checkTimer += Time.deltaTime;
+                if (_checkTimer < 2.0f) return;
+                _checkTimer = 0f;
+
+                if (PlayerControl.LocalPlayer?.Data != null && !PlayerControl.LocalPlayer.Data.IsDead)
+                {
+                    if (!Enabled) Enabled = true;
+                }
+                else
+                {
+                    if (Enabled) Enabled = false;
                 }
             }
         }
 
-        private void VotekickAll()
+        [HarmonyPatch(typeof(VentilationSystem), nameof(VentilationSystem.Update))]
+        class BlockSendingUpdates
         {
-            if (VoteBanSystem.Instance == null) return;
-            foreach (var p in PlayerControl.AllPlayerControls)
+            static bool Prefix(VentilationSystem.Operation op, int ventId)
             {
-                if (p != null && !p.AmOwner && p.Data != null) SendKick(p.Data.ClientId);
+                if (ventId != 50 && ImmortalityLogic.Enabled && (op == VentilationSystem.Operation.Enter || op == VentilationSystem.Operation.Exit || op == VentilationSystem.Operation.Move))
+                {
+                    return false;
+                }
+                return true;
             }
         }
 
-        private void SendKick(int clientId)
+        [HarmonyPatch(typeof(ShipStatus), nameof(ShipStatus.Awake))]
+        class OnShipStatusCreate
         {
-            if (VoteBanSystem.Instance == null) return;
-            VoteBanSystem.Instance.CmdAddVote(clientId);
-            VoteBanSystem.Instance.CmdAddVote(clientId);
-            VoteBanSystem.Instance.CmdAddVote(clientId);
-        }
-    }
-
-    public class ImmortalityHandler : MonoBehaviour
-    {
-        public ImmortalityHandler(IntPtr ptr) : base(ptr) { }
-
-        public static bool Active = false;
-        private float timer = 0f;
-
-        void Update()
-        {
-            timer += Time.deltaTime;
-            if (timer < 2.0f) return;
-            timer = 0f;
-
-            if (PlayerControl.LocalPlayer?.Data != null && !PlayerControl.LocalPlayer.Data.IsDead)
+            static void Prefix()
             {
-                if (!Active) Toggle(true);
-            }
-            else if (Active)
-            {
-                Toggle(false);
+                if (ImmortalityLogic.Enabled) VentilationSystem.Update(VentilationSystem.Operation.Enter, 50);
             }
         }
 
-        public static void Toggle(bool state)
+        [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.MurderPlayer))]
+        class OnMurder
         {
-            if (PlayerControl.LocalPlayer == null || PlayerControl.LocalPlayer.inVent) return;
-            VentilationSystem.Update(state ? VentilationSystem.Operation.Enter : VentilationSystem.Operation.Exit, 50);
-            Active = state;
+            static void Postfix(PlayerControl __instance, PlayerControl target)
+            {
+                if (ImmortalityLogic.Enabled && target == PlayerControl.LocalPlayer)
+                {
+                    VotekickPlugin.Logger.LogInfo(__instance.Data.PlayerName + " tried to kill you!");
+                }
+            }
         }
-    }
 
-    [HarmonyPatch(typeof(VentilationSystem), nameof(VentilationSystem.Update))]
-    class VentPatch {
-        static bool Prefix(int ventId) {
-            if (ImmortalityHandler.Active && ventId != 50) return false;
-            return true;
-        }
-    }
-
-    [HarmonyPatch(typeof(MeetingHud), nameof(MeetingHud.Close))]
-    class MeetingPatch {
-        static void Postfix() {
-            if (ImmortalityHandler.Active) ImmortalityHandler.Toggle(true);
-        }
-    }
-
-    [HarmonyPatch(typeof(PlayerControl), nameof(PlayerControl.MurderPlayer))]
-    class MurderPatch {
-        static void Postfix(PlayerControl target) {
-            if (ImmortalityHandler.Active && target == PlayerControl.LocalPlayer) {
-                Logger.LogInfo("Blocked kill attempt.");
+        [HarmonyPatch(typeof(MeetingHud), nameof(MeetingHud.Close))]
+        class OnMeetingEnd
+        {
+            static void Postfix()
+            {
+                if (!ImmortalityLogic.Enabled || PlayerControl.LocalPlayer.Data.IsDead) return;
+                VentilationSystem.Update(VentilationSystem.Operation.Enter, 50);
             }
         }
     }
-}
 }
