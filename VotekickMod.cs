@@ -27,6 +27,8 @@ namespace VotekickMod
         {
             public VotekickMenu(IntPtr ptr) : base(ptr) { }
 
+            private Rect windowRect = new Rect(20, 20, 250, 500);
+
             private void Update()
             {
                 if (Input.GetKeyDown(KeyCode.F2))
@@ -38,9 +40,12 @@ namespace VotekickMod
             private void OnGUI()
             {
                 if (!showGui) return;
-                GUI.Box(new Rect(10, 10, 250, 500), "Votekick Mod");
-                
-                if (GUI.Button(new Rect(20, 40, 230, 30), "Votekick All"))
+                windowRect = GUI.Window(0, windowRect, (GUI.WindowFunction)DrawWindow, "Votekick Mod");
+            }
+
+            private void DrawWindow(int windowID)
+            {
+                if (GUI.Button(new Rect(20, 40, 210, 30), "Votekick All"))
                 {
                     VotekickAllOnce();
                     DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Votekicked Everyone");
@@ -54,7 +59,7 @@ namespace VotekickMod
                     {
                         var p = players[i];
                         if (p == null || p.AmOwner || p.Data == null) continue;
-                        if (GUI.Button(new Rect(20, yOffset, 230, 25), "Kick " + p.Data.PlayerName))
+                        if (GUI.Button(new Rect(20, yOffset, 210, 25), "Kick " + p.Data.PlayerName))
                         {
                             SendKick(p.Data.ClientId);
                             DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Votekicked " + p.Data.PlayerName);
@@ -62,6 +67,8 @@ namespace VotekickMod
                         yOffset += 30;
                     }
                 }
+
+                GUI.DragWindow(new Rect(0, 0, 10000, 10000));
             }
 
             private void VotekickAllOnce()
