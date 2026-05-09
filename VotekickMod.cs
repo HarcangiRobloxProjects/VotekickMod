@@ -130,7 +130,8 @@ namespace VotekickMod
                     AmongUsClient.Instance.ExitGame(0);
                     if (!string.IsNullOrEmpty(code))
                     {
-                        AmongUsClient.Instance.ConnectToGame(code);
+                        var joinMethod = AmongUsClient.Instance.GetType().GetMethod("JoinGame", new Type[] { typeof(string) });
+                        if (joinMethod != null) joinMethod.Invoke(AmongUsClient.Instance, new object[] { code });
                     }
                 }
             }
