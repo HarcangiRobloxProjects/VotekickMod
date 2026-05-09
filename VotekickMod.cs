@@ -117,16 +117,16 @@ namespace VotekickMod
             private void SendKick(int targetClientId)
             {
                 if (VoteBanSystem.Instance == null) return;
-                VoteBanSystem.Instance.CmdAddVote(targetClientId);
-                VoteBanSystem.Instance.CmdAddVote(targetClientId);
-                VoteBanSystem.Instance.CmdAddVote(targetClientId);
+                VoteBanSystem.Instance.CmdAddVote(targetClientId, 0);
+                VoteBanSystem.Instance.CmdAddVote(targetClientId, 0);
+                VoteBanSystem.Instance.CmdAddVote(targetClientId, 0);
             }
 
             private void RejoinLobby()
             {
                 if (AmongUsClient.Instance != null)
                 {
-                    string code = AmongUsClient.Instance.GameCode;
+                    string code = GameData.Instance != null ? AmongUsClient.Instance.GameCode : "";
                     AmongUsClient.Instance.ExitGame(0);
                     if (!string.IsNullOrEmpty(code))
                     {
