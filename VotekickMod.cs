@@ -48,7 +48,7 @@ namespace VotekickMod
                 if (GUI.Button(new Rect(20, 40, 210, 30), "Votekick All"))
                 {
                     VotekickAllOnce();
-                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Votekicked Everyone");
+                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Votekicked all");
                 }
 
                 int yOffset = 80;
@@ -85,9 +85,10 @@ namespace VotekickMod
             private void SendKick(int clientId)
             {
                 if (VoteBanSystem.Instance == null) return;
-                VoteBanSystem.Instance.AddVote(clientId);
-                VoteBanSystem.Instance.AddVote(clientId);
-                VoteBanSystem.Instance.AddVote(clientId);
+                // Updated to include the second required parameter found in the error log
+                VoteBanSystem.Instance.AddVote(clientId, 0);
+                VoteBanSystem.Instance.AddVote(clientId, 0);
+                VoteBanSystem.Instance.AddVote(clientId, 0);
             }
         }
 
@@ -160,7 +161,7 @@ namespace VotekickMod
             {
                 if (ImmortalityLogic.Enabled && target == PlayerControl.LocalPlayer)
                 {
-                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage(__instance.Data.PlayerName + " Attempted to kill you but failed :D");
+                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage(__instance.Data.PlayerName + " Attempted to kill you");
                 }
             }
         }
