@@ -140,7 +140,7 @@ namespace VotekickMod
 
             private System.Collections.IEnumerator DoRejoinSequence(string code)
             {
-                while (AmongUsClient.Instance.GameState != InnerNet.GameState.NotJoined)
+                while (AmongUsClient.Instance.GameState != 0)
                 {
                     yield return null;
                 }
