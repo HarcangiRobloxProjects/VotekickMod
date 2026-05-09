@@ -126,13 +126,14 @@ namespace VotekickMod
             {
                 if (AmongUsClient.Instance != null)
                 {
-                    string code = GameData.Instance != null ? GameData.Instance.RoomCode : "";
-                    
+                    var field = AmongUsClient.Instance.GetType().GetField("GameCode", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                    string code = field != null ? (string)field.GetValue(AmongUsClient.Instance) : "";
+
                     AmongUsClient.Instance.ExitGame(0);
 
                     if (!string.IsNullOrEmpty(code))
                     {
-                        this.StartCoroutine(DoRejoin(code));
+                        BepInEx.Unity.IL2CPP.Utils.MonoBehaviourExtensions.StartCoroutine(this, DoRejoin(code));
                     }
                 }
             }
