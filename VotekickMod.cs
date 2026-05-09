@@ -133,14 +133,20 @@ namespace VotekickMod
 
                     if (!string.IsNullOrEmpty(code))
                     {
-                        BepInEx.Unity.IL2CPP.Utils.MonoBehaviourExtensions.StartCoroutine(this, DoRejoin(code));
+                        BepInEx.Unity.IL2CPP.Utils.MonoBehaviourExtensions.StartCoroutine(this, DoRejoinSequence(code));
                     }
                 }
             }
 
-            private System.Collections.IEnumerator DoRejoin(string code)
+            private System.Collections.IEnumerator DoRejoinSequence(string code)
             {
-                yield return new WaitForSeconds(1.0f);
+                while (AmongUsClient.Instance.GameState != InnerNet.GameState.NotJoined)
+                {
+                    yield return null;
+                }
+
+                yield return new WaitForSeconds(1.5f);
+
                 var joinMethod = AmongUsClient.Instance.GetType().GetMethod("JoinGame", new Type[] { typeof(string) });
                 if (joinMethod != null)
                 {
