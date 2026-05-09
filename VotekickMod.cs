@@ -6,7 +6,6 @@ using HarmonyLib;
 using System;
 using InnerNet;
 using System.Collections.Generic;
-using BepInEx.Unity.IL2CPP.Utils.Collections;
 
 namespace VotekickMod
 {
@@ -15,7 +14,6 @@ namespace VotekickMod
     {
         public static ManualLogSource Logger;
         public static bool showGui = false;
-        public static bool forceHostActive = false;
 
         public override void Load()
         {
@@ -30,27 +28,13 @@ namespace VotekickMod
         {
             public VotekickMenu(IntPtr ptr) : base(ptr) { }
 
-            private Rect windowRect = new Rect(20, 20, 250, 500);
+            private Rect windowRect = new Rect(20, 20, 250, 400);
 
             private void Update()
             {
                 if (Input.GetKeyDown(KeyCode.F2))
                 {
                     showGui = !showGui;
-                }
-
-                if (forceHostActive)
-                {
-                    if (AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost)
-                    {
-                        forceHostActive = false;
-                        if (DestroyableSingleton<HudManager>.Instance?.Notifier != null)
-                            DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Got Host :D");
-                    }
-                    else
-                    {
-                        VotekickAllDirect();
-                    }
                 }
             }
 
@@ -62,28 +46,17 @@ namespace VotekickMod
 
             private void DrawWindow(int windowID)
             {
-                if (GUI.Button(new Rect(20, 40, 210, 30), "Votekick All With Rejoin"))
-                {
-                    VotekickAllDirect();
-                    RejoinLobby();
-                }
-
-                if (GUI.Button(new Rect(20, 80, 210, 30), "Votekick All Without Rejoin"))
+                if (GUI.Button(new Rect(20, 40, 210, 30), "Votekick All"))
                 {
                     VotekickAllDirect();
                 }
 
-                if (GUI.Button(new Rect(20, 120, 210, 30), forceHostActive ? "Force Host: On" : "Force Host: Off"))
-                {
-                    forceHostActive = !forceHostActive;
-                }
-
-                if (GUI.Button(new Rect(20, 160, 210, 30), ImmortalityLogic.ModEnabled ? "Immortality: On" : "Immortality: Off"))
+                if (GUI.Button(new Rect(20, 80, 210, 30), ImmortalityLogic.ModEnabled ? "Immortality: On" : "Immortality: Off"))
                 {
                     ImmortalityLogic.ModEnabled = !ImmortalityLogic.ModEnabled;
                 }
 
-                int yOffset = 200;
+                int yOffset = 120;
                 var players = PlayerControl.AllPlayerControls;
                 if (players != null)
                 {
@@ -121,38 +94,6 @@ namespace VotekickMod
                 VoteBanSystem.Instance.CmdAddVote(targetClientId);
                 VoteBanSystem.Instance.CmdAddVote(targetClientId);
                 VoteBanSystem.Instance.CmdAddVote(targetClientId);
-            }
-
-            private void RejoinLobby()
-            {
-                if (AmongUsClient.Instance != null)
-                {
-                    var field = AmongUsClient.Instance.GetType().GetField("GameCode", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                    string code = field != null ? field.GetValue(AmongUsClient.Instance)?.ToString() : "";
-
-                    AmongUsClient.Instance.ExitGame(0);
-
-                    if (!string.IsNullOrEmpty(code))
-                    {
-                        this.StartCoroutine(DoRejoinSequence(code).WrapToIl2Cpp());
-                    }
-                }
-            }
-
-            private System.Collections.IEnumerator DoRejoinSequence(string code)
-            {
-                while (AmongUsClient.Instance.GameState != 0)
-                {
-                    yield return null;
-                }
-
-                yield return new WaitForSeconds(1.5f);
-
-                var joinMethod = AmongUsClient.Instance.GetType().GetMethod("JoinGame", new Type[] { typeof(string) });
-                if (joinMethod != null)
-                {
-                    joinMethod.Invoke(AmongUsClient.Instance, new object[] { code });
-                }
             }
         }
 
