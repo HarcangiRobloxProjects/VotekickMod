@@ -116,35 +116,18 @@ namespace VotekickMod
 
             private void SendKick(int targetClientId)
             {
-                if (VoteBanSystem.Instance == null || PlayerControl.LocalPlayer == null) return;
-                
-                int myId = PlayerControl.LocalPlayer.Data.ClientId;
-                List<int> voters = new List<int> { myId };
-
-                foreach (var p in PlayerControl.AllPlayerControls)
-                {
-                    if (p != null && !p.AmOwner && p.Data != null && p.Data.ClientId != targetClientId)
-                    {
-                        voters.Add(p.Data.ClientId);
-                    }
-                    if (voters.Count >= 3) break;
-                }
-
-                foreach (int voterId in voters)
-                {
-                    VoteBanSystem.Instance.AddVote(voterId, targetClientId);
-                }
+                if (VoteBanSystem.Instance == null) return;
+                VoteBanSystem.Instance.CmdAddVote(targetClientId);
+                VoteBanSystem.Instance.CmdAddVote(targetClientId);
+                VoteBanSystem.Instance.CmdAddVote(targetClientId);
             }
 
             private void RejoinLobby()
             {
                 if (AmongUsClient.Instance != null)
                 {
-                    var field = AmongUsClient.Instance.GetType().GetField("GameCode", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                    string code = field != null ? (string)field.GetValue(AmongUsClient.Instance) : "";
-                    
+                    string code = AmongUsClient.Instance.GetType().GetProperty("GameCode")?.GetValue(AmongUsClient.Instance)?.ToString() ?? "";
                     AmongUsClient.Instance.ExitGame(0);
-                    
                     if (!string.IsNullOrEmpty(code))
                     {
                         AmongUsClient.Instance.ConnectToGame(code);
