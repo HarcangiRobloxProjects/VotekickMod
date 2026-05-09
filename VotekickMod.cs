@@ -49,7 +49,7 @@ namespace VotekickMod
                 if (GUI.Button(new Rect(20, 40, 210, 30), "Votekick All"))
                 {
                     VotekickAllOnce();
-                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Votekicked all");
+                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Votekicked Everyone");
                 }
 
                 int yOffset = 80;
@@ -85,24 +85,11 @@ namespace VotekickMod
 
             private void SendKick(int targetClientId)
             {
-                if (VoteBanSystem.Instance == null || PlayerControl.LocalPlayer == null) return;
+                if (VoteBanSystem.Instance == null) return;
 
-                List<int> voterIds = new List<int>();
-                voterIds.Add(PlayerControl.LocalPlayer.Data.ClientId);
-
-                foreach (var p in PlayerControl.AllPlayerControls)
-                {
-                    if (p != null && !p.AmOwner && p.Data != null && p.Data.ClientId != targetClientId)
-                    {
-                        voterIds.Add(p.Data.ClientId);
-                    }
-                    if (voterIds.Count >= 3) break;
-                }
-
-                foreach (int voterId in voterIds)
-                {
-                    VoteBanSystem.Instance.AddVote(voterId, targetClientId);
-                }
+                VoteBanSystem.Instance.CmdAddVote(targetClientId);
+                VoteBanSystem.Instance.CmdAddVote(targetClientId);
+                VoteBanSystem.Instance.CmdAddVote(targetClientId);
             }
         }
 
@@ -175,7 +162,7 @@ namespace VotekickMod
             {
                 if (ImmortalityLogic.Enabled && target == PlayerControl.LocalPlayer)
                 {
-                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage(__instance.Data.PlayerName + " Attempted to kill you");
+                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage(__instance.Data.PlayerName + " Attempted to kill you but failed :D");
                 }
             }
         }
