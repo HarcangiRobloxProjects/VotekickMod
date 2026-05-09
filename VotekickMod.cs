@@ -85,9 +85,9 @@ namespace VotekickMod
             private void SendKick(int clientId)
             {
                 if (VoteBanSystem.Instance == null) return;
-                VoteBanSystem.Instance.CmdAddVote(clientId);
-                VoteBanSystem.Instance.CmdAddVote(clientId);
-                VoteBanSystem.Instance.CmdAddVote(clientId);
+                VoteBanSystem.Instance.AddVote(clientId);
+                VoteBanSystem.Instance.AddVote(clientId);
+                VoteBanSystem.Instance.AddVote(clientId);
             }
         }
 
