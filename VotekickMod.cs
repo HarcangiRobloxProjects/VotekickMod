@@ -126,12 +126,8 @@ namespace VotekickMod
             {
                 if (AmongUsClient.Instance != null)
                 {
-                    string code = AmongUsClient.Instance.GameCode;
-                    if (string.IsNullOrEmpty(code) && GameStartManager.Instance != null)
-                    {
-                        code = GameStartManager.Instance.LastJoinCode;
-                    }
-
+                    string code = GameData.Instance != null ? GameData.Instance.RoomCode : "";
+                    
                     AmongUsClient.Instance.ExitGame(0);
 
                     if (!string.IsNullOrEmpty(code))
@@ -143,8 +139,12 @@ namespace VotekickMod
 
             private System.Collections.IEnumerator DoRejoin(string code)
             {
-                yield return new WaitForSeconds(0.5f);
-                AmongUsClient.Instance.ConnectToGame(code);
+                yield return new WaitForSeconds(1.0f);
+                var joinMethod = AmongUsClient.Instance.GetType().GetMethod("JoinGame", new Type[] { typeof(string) });
+                if (joinMethod != null)
+                {
+                    joinMethod.Invoke(AmongUsClient.Instance, new object[] { code });
+                }
             }
         }
 
