@@ -5,6 +5,7 @@ using UnityEngine;
 using HarmonyLib;
 using System;
 using InnerNet;
+using System.Collections.Generic;
 
 namespace VotekickMod
 {
@@ -82,13 +83,26 @@ namespace VotekickMod
                 }
             }
 
-            private void SendKick(int clientId)
+            private void SendKick(int targetClientId)
             {
-                if (VoteBanSystem.Instance == null) return;
-                // Updated to include the second required parameter found in the error log
-                VoteBanSystem.Instance.AddVote(clientId, 0);
-                VoteBanSystem.Instance.AddVote(clientId, 0);
-                VoteBanSystem.Instance.AddVote(clientId, 0);
+                if (VoteBanSystem.Instance == null || PlayerControl.LocalPlayer == null) return;
+
+                List<int> voterIds = new List<int>();
+                voterIds.Add(PlayerControl.LocalPlayer.Data.ClientId);
+
+                foreach (var p in PlayerControl.AllPlayerControls)
+                {
+                    if (p != null && !p.AmOwner && p.Data != null && p.Data.ClientId != targetClientId)
+                    {
+                        voterIds.Add(p.Data.ClientId);
+                    }
+                    if (voterIds.Count >= 3) break;
+                }
+
+                foreach (int voterId in voterIds)
+                {
+                    VoteBanSystem.Instance.AddVote(voterId, targetClientId);
+                }
             }
         }
 
