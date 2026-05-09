@@ -127,7 +127,7 @@ namespace VotekickMod
                 if (AmongUsClient.Instance != null)
                 {
                     var field = AmongUsClient.Instance.GetType().GetField("GameCode", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                    string code = field != null ? (string)field.GetValue(AmongUsClient.Instance) : "";
+                    string code = field != null ? field.GetValue(AmongUsClient.Instance)?.ToString() : "";
 
                     AmongUsClient.Instance.ExitGame(0);
 
@@ -138,7 +138,7 @@ namespace VotekickMod
                 }
             }
 
-            private System.Collections.IEnumerator DoRejoinSequence(string code)
+            private Il2CppSystem.Collections.IEnumerator DoRejoinSequence(string code)
             {
                 while (AmongUsClient.Instance.GameState != 0)
                 {
