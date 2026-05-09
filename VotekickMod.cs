@@ -14,6 +14,7 @@ namespace VotekickMod
     {
         public static ManualLogSource Logger;
         public static bool showGui = false;
+        public static bool forceHostActive = false;
 
         public override void Load()
         {
@@ -36,6 +37,19 @@ namespace VotekickMod
                 {
                     showGui = !showGui;
                 }
+
+                if (forceHostActive)
+                {
+                    if (InnerNetClient.Instance != null && InnerNetClient.Instance.AmHost)
+                    {
+                        forceHostActive = false;
+                        DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Got Host :D");
+                    }
+                    else
+                    {
+                        VotekickAllDirect();
+                    }
+                }
             }
 
             private void OnGUI()
@@ -46,13 +60,28 @@ namespace VotekickMod
 
             private void DrawWindow(int windowID)
             {
-                if (GUI.Button(new Rect(20, 40, 210, 30), "Votekick All"))
+                if (GUI.Button(new Rect(20, 40, 210, 30), "Votekick All With Rejoin"))
                 {
-                    VotekickAllOnce();
-                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Votekicked Everyone");
+                    VotekickAllDirect();
+                    RejoinLobby();
                 }
 
-                int yOffset = 80;
+                if (GUI.Button(new Rect(20, 80, 210, 30), "Votekick All Without Rejoin"))
+                {
+                    VotekickAllDirect();
+                }
+
+                if (GUI.Button(new Rect(20, 120, 210, 30), forceHostActive ? "Force Host: On" : "Force Host: Off"))
+                {
+                    forceHostActive = !forceHostActive;
+                }
+
+                if (GUI.Button(new Rect(20, 160, 210, 30), ImmortalityLogic.ModEnabled ? "Immortality: On" : "Immortality: Off"))
+                {
+                    ImmortalityLogic.ModEnabled = !ImmortalityLogic.ModEnabled;
+                }
+
+                int yOffset = 200;
                 var players = PlayerControl.AllPlayerControls;
                 if (players != null)
                 {
@@ -72,7 +101,7 @@ namespace VotekickMod
                 GUI.DragWindow(new Rect(0, 0, 10000, 10000));
             }
 
-            private void VotekickAllOnce()
+            private void VotekickAllDirect()
             {
                 if (VoteBanSystem.Instance == null) return;
                 var players = PlayerControl.AllPlayerControls;
@@ -86,10 +115,22 @@ namespace VotekickMod
             private void SendKick(int targetClientId)
             {
                 if (VoteBanSystem.Instance == null) return;
+                VoteBanSystem.Instance.CmdAddVote(targetClientId);
+                VoteBanSystem.Instance.CmdAddVote(targetClientId);
+                VoteBanSystem.Instance.CmdAddVote(targetClientId);
+            }
 
-                VoteBanSystem.Instance.CmdAddVote(targetClientId);
-                VoteBanSystem.Instance.CmdAddVote(targetClientId);
-                VoteBanSystem.Instance.CmdAddVote(targetClientId);
+            private void RejoinLobby()
+            {
+                if (AmongUsClient.Instance != null)
+                {
+                    string code = GameStartManager.Instance != null ? GameStartManager.Instance.LastJoinCode : "";
+                    AmongUsClient.Instance.ExitGame(AmongUsClient.LeaveReason.UserLeave);
+                    if (!string.IsNullOrEmpty(code))
+                    {
+                        AmongUsClient.Instance.ConnectToGame(code);
+                    }
+                }
             }
         }
 
@@ -98,37 +139,31 @@ namespace VotekickMod
             public ImmortalityLogic(IntPtr ptr) : base(ptr) { }
 
             private static readonly int CUSTOM_VENT_ID = 50;
-            public static bool _enabled = false;
+            public static bool ModEnabled = false;
+            public static bool _internalState = false;
             private float _checkTimer = 0f;
-
-            public static bool Enabled
-            {
-                get => _enabled;
-                set
-                {
-                    if (value == _enabled) return;
-                    if (PlayerControl.LocalPlayer != null && !PlayerControl.LocalPlayer.inVent)
-                    {
-                        if (value) VentilationSystem.Update(VentilationSystem.Operation.Enter, CUSTOM_VENT_ID);
-                        else VentilationSystem.Update(VentilationSystem.Operation.Exit, CUSTOM_VENT_ID);
-                    }
-                    _enabled = value;
-                }
-            }
 
             private void Update()
             {
                 _checkTimer += Time.deltaTime;
-                if (_checkTimer < 2.0f) return;
+                if (_checkTimer < 1.0f) return;
                 _checkTimer = 0f;
 
-                if (PlayerControl.LocalPlayer?.Data != null && !PlayerControl.LocalPlayer.Data.IsDead)
+                if (ModEnabled && PlayerControl.LocalPlayer != null && !PlayerControl.LocalPlayer.Data.IsDead)
                 {
-                    if (!Enabled) Enabled = true;
+                    if (!_internalState)
+                    {
+                        VentilationSystem.Update(VentilationSystem.Operation.Enter, CUSTOM_VENT_ID);
+                        _internalState = true;
+                    }
                 }
                 else
                 {
-                    if (Enabled) Enabled = false;
+                    if (_internalState)
+                    {
+                        if (PlayerControl.LocalPlayer != null) VentilationSystem.Update(VentilationSystem.Operation.Exit, CUSTOM_VENT_ID);
+                        _internalState = false;
+                    }
                 }
             }
         }
@@ -138,7 +173,7 @@ namespace VotekickMod
         {
             static bool Prefix(VentilationSystem.Operation op, int ventId)
             {
-                if (ventId != 50 && ImmortalityLogic.Enabled && (op == VentilationSystem.Operation.Enter || op == VentilationSystem.Operation.Exit || op == VentilationSystem.Operation.Move))
+                if (ventId != 50 && ImmortalityLogic.ModEnabled && ImmortalityLogic._internalState)
                 {
                     return false;
                 }
@@ -151,7 +186,7 @@ namespace VotekickMod
         {
             static void Prefix()
             {
-                ImmortalityLogic._enabled = false;
+                ImmortalityLogic._internalState = false;
             }
         }
 
@@ -160,7 +195,7 @@ namespace VotekickMod
         {
             static void Postfix(PlayerControl __instance, PlayerControl target)
             {
-                if (ImmortalityLogic.Enabled && target == PlayerControl.LocalPlayer)
+                if (ImmortalityLogic.ModEnabled && target == PlayerControl.LocalPlayer)
                 {
                     DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage(__instance.Data.PlayerName + " Attempted to kill you but failed :D");
                 }
@@ -172,8 +207,11 @@ namespace VotekickMod
         {
             static void Postfix()
             {
-                if (!ImmortalityLogic.Enabled || PlayerControl.LocalPlayer.Data.IsDead) return;
-                VentilationSystem.Update(VentilationSystem.Operation.Enter, 50);
+                if (ImmortalityLogic.ModEnabled && PlayerControl.LocalPlayer != null && !PlayerControl.LocalPlayer.Data.IsDead)
+                {
+                    VentilationSystem.Update(VentilationSystem.Operation.Enter, 50);
+                    ImmortalityLogic._internalState = true;
+                }
             }
         }
     }
