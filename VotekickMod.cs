@@ -41,7 +41,7 @@ namespace VotekickMod
             private void OnGUI()
             {
                 if (!showGui) return;
-                windowRect = GUI.Window(0, windowRect, (GUI.WindowFunction)DrawWindow, "Votekick Mod");
+                windowRect = GUI.Window(0, windowRect, (GUI.WindowFunction)DrawWindow, "Votekick Mod, With Immortality");
             }
 
             private void DrawWindow(int windowID)
@@ -49,6 +49,8 @@ namespace VotekickMod
                 if (GUI.Button(new Rect(20, 40, 210, 30), "Votekick All"))
                 {
                     VotekickAllDirect();
+                    if (DestroyableSingleton<HudManager>.Instance?.Notifier != null)
+                        DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Votekicked Everyone");
                 }
 
                 if (GUI.Button(new Rect(20, 80, 210, 30), ImmortalityLogic.ModEnabled ? "Immortality: On" : "Immortality: Off"))
