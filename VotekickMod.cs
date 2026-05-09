@@ -40,10 +40,11 @@ namespace VotekickMod
 
                 if (forceHostActive)
                 {
-                    if (InnerNetClient.Instance != null && InnerNetClient.Instance.AmHost)
+                    if (AmongUsClient.Instance != null && AmongUsClient.Instance.AmHost)
                     {
                         forceHostActive = false;
-                        DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Got Host :D");
+                        if (DestroyableSingleton<HudManager>.Instance?.Notifier != null)
+                            DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Got Host :D");
                     }
                     else
                     {
@@ -92,7 +93,8 @@ namespace VotekickMod
                         if (GUI.Button(new Rect(20, yOffset, 210, 25), "Kick " + p.Data.PlayerName))
                         {
                             SendKick(p.Data.ClientId);
-                            DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Votekicked " + p.Data.PlayerName);
+                            if (DestroyableSingleton<HudManager>.Instance?.Notifier != null)
+                                DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage("Votekicked " + p.Data.PlayerName);
                         }
                         yOffset += 30;
                     }
@@ -124,8 +126,8 @@ namespace VotekickMod
             {
                 if (AmongUsClient.Instance != null)
                 {
-                    string code = GameStartManager.Instance != null ? GameStartManager.Instance.LastJoinCode : "";
-                    AmongUsClient.Instance.ExitGame(AmongUsClient.LeaveReason.UserLeave);
+                    string code = AmongUsClient.Instance.GameCode;
+                    AmongUsClient.Instance.ExitGame(0);
                     if (!string.IsNullOrEmpty(code))
                     {
                         AmongUsClient.Instance.ConnectToGame(code);
@@ -197,7 +199,8 @@ namespace VotekickMod
             {
                 if (ImmortalityLogic.ModEnabled && target == PlayerControl.LocalPlayer)
                 {
-                    DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage(__instance.Data.PlayerName + " Attempted to kill you but failed :D");
+                    if (DestroyableSingleton<HudManager>.Instance?.Notifier != null)
+                        DestroyableSingleton<HudManager>.Instance.Notifier.AddDisconnectMessage(__instance.Data.PlayerName + " Attempted to kill you but failed :D");
                 }
             }
         }
