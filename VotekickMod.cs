@@ -6,6 +6,7 @@ using HarmonyLib;
 using System;
 using InnerNet;
 using System.Collections.Generic;
+using BepInEx.Unity.IL2CPP.Utils.Collections;
 
 namespace VotekickMod
 {
@@ -133,12 +134,12 @@ namespace VotekickMod
 
                     if (!string.IsNullOrEmpty(code))
                     {
-                        BepInEx.Unity.IL2CPP.Utils.MonoBehaviourExtensions.StartCoroutine(this, DoRejoinSequence(code));
+                        this.StartCoroutine(DoRejoinSequence(code).WrapToIl2Cpp());
                     }
                 }
             }
 
-            private Il2CppSystem.Collections.IEnumerator DoRejoinSequence(string code)
+            private System.Collections.IEnumerator DoRejoinSequence(string code)
             {
                 while (AmongUsClient.Instance.GameState != 0)
                 {
